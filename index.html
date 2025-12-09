@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Drone Travel & Flight Estimator</title>
+  <style>
+    :root{
+      --bg:#0f1115;
+      --panel:#151923;
+      --panel2:#0c0f15;
+      --text:#e9ecf1;
+      --muted:#a7afbd;
+      --accent:#66e0a3;
+      --accent2:#6aa9ff;
+      --border:#232a3a;
+      --radius:14px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+    }
+    header{
+      padding:18px 20px; border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg,#121625,#0f1115);
+      position:sticky; top:0;
+    }
+    header h1{ margin:0 0 4px 0; font-size:20px; }
+    header p{ margin:0; color:var(--muted); font-size:13px; }
+
+    main{
+      display:grid; gap:14px; padding:14px;
+      grid-template-columns: 360px 1fr;
+    }
+    .panel{
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:var(--radius); padding:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    .panel h2{ margin:0 0 10px 0; font-size:15px; }
+    label{
+      display:block; font-size:13px; font-weight:700; margin:10px 0 6px 0;
+    }
+    input, select{
+      width:100%; padding:10px 11px; border-radius:10px;
+      border:1px solid var(--border); background:var(--panel2); color:var(--text);
+      outline:none; font-size:14px;
+    }
+    input::placeholder{ color:#778097; }
+
+    .row{ display:flex; gap:8px; align-items:center; }
+    .btn{
+      margin-top:12px; width:100%;
+      padding:11px 12px; border-radius:10px; border:1px solid transparent;
+      background:linear-gradient(180deg,#1d7a57,#145740);
+      color:white; font-weight:800; cursor:pointer;
+    }
+    .btn:hover{ filter:brightness(1.07); }
+
+    .assump{
+      margin-top:10px; padding:8px 10px;
+      border:1px dashed var(--border); border-radius:10px;
+      color:var(--muted); font-size:12px; background:#0d1017;
+    }
+    .assump b{ color:#dfe6ef; }
+
+    .cards{
+      display:grid; gap:10px; grid-template-columns: repeat(2, minmax(220px,1fr));
+    }
+    .card{
+      background:#0d1017; border:1px solid var(--border);
+      border-radius:12px; padding:12px;
+    }
+    .card h3{ margin:0 0 8px 0; font-size:14px; }
+    .big{ font-size:20px; font-weight:900; }
+    .muted{ color:var(--muted); font-size:12px; margin-top:4px; }
+
+    .status{
+      margin-top:8px; font-size:12px; color:var(--muted); min-height:16px;
+    }
+    footer{
+      text-align:center; color:var(--muted); font-size:12px;
+      padding:12px 10px; border-top:1px solid var(--border);
+    }
+
+    @media (max-width: 900px){
+      main{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Drone Travel & Flight Estimator</h1>
+    <p>Back-of-the-envelope travel + flight time for PM estimates</p>
+  </header>
+
+  <main>
+    <!-- INPUTS -->
+    <section class="panel">
+      <h2>Inputs</h2>
+
+      <label for="office">Pilot Office</label>
+      <select id="office">
+        <!-- edit these however you want -->
+        <option>Denver, CO</option>
+        <option>Phoenix, AZ</option>
+        <option>Dallas, TX</option>
+        <option>Atlanta, GA</option>
+      </select>
+
+      <label for="travelMin">One-way Travel Time (minutes)</label>
+      <input id="travelMin" type="number" min="0" step="1" placeholder="e.g., 90" />
+
+      <label for="acres">Site Size (acres)</label>
+      <input id="acres" type="number" min="0" step="0.1" placeholder="e.g., 18.5" />
+
+      <div class="assump">
+        <div><b>Assumptions</b></div>
+        <ul style="margin:6px 0 0 18px; padding:0;">
+          <li>Coverage: 5 acres / 25 min ⇒ <b>0.20 acres/min</b></li>
+          <li>Battery: <b>30 min flight</b> per battery</li>
+          <li>Swap overhead: <b>10 min</b> per battery change</li>
+          <li>Bucket: <b>Half-day ≤ 20 acres</b>, Full-day &gt; 20 acres</li>
+        </ul>
+      </div>
+
+      <button class="btn" id="calc">Calculate Estimate</button>
+      <div class="status" id="status"></div>
+    </section>
+
+    <!-- OUTPUTS -->
+    <section class="panel">
+      <h2>Estimate</h2>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Travel</h3>
+          <div class="big" id="travelOut">—</div>
+          <div class="muted" id="travelMeta">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Flight Time</h3>
+          <div class="big" id="flightOut">—</div>
+          <div class="muted" id="flightMeta">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Batteries</h3>
+          <div class="big" id="battOut">—</div>
+          <div class="muted" id="battMeta">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Day Bucket</h3>
+          <div class="big" id="bucketOut">—</div>
+          <div class="muted" id="bucketMeta">—</div>
+        </div>
+
+        <div class="card" style="grid-column:1 / -1;">
+          <h3>Total Time (drive round-trip + flight + swaps)</h3>
+          <div class="big" id="totalOut">—</div>
+          <div class="muted" id="totalMeta">—</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Terraphase · Drone Estimator (static HTML)
+  </footer>
+
+<script>
+  // ====== assumptions you can tweak ======
+  const ACRES_PER_MIN = 0.20;   // Phantom 4 coverage rate
+  const BATTERY_FLIGHT_MIN = 30;
+  const BATTERY_SWAP_MIN = 10;
+  const HALF_DAY_MAX_ACRES = 20;
+  // ======================================
+
+  const el = (id) => document.getElementById(id);
+
+  function fmt(min){
+    min = Math.round(min);
+    const h = Math.floor(min/60);
+    const m = min%60;
+    if(h === 0) return `${m} min`;
+    return `${h} hr ${m} min`;
+  }
+
+  el("calc").addEventListener("click", () => {
+    const office = el("office").value;
+    const travelOneWay = Number(el("travelMin").value);
+    const acres = Number(el("acres").value);
+
+    if(!travelOneWay || travelOneWay < 0){
+      el("status").textContent = "Enter a valid one-way travel time.";
+      return;
+    }
+    if(!acres || acres <= 0){
+      el("status").textContent = "Enter a valid site size in acres.";
+      return;
+    }
+
+    // Flight math
+    const flightMinutes = acres / ACRES_PER_MIN;
+    const batteries = Math.ceil(flightMinutes / BATTERY_FLIGHT_MIN);
+    const swaps = Math.max(0, batteries - 1);
+    const swapMinutes = swaps * BATTERY_SWAP_MIN;
+    const flightBlock = flightMinutes + swapMinutes;
+
+    // Bucket
+    const bucket = acres <= HALF_DAY_MAX_ACRES ? "Half-day" : "Full-day";
+
+    // Totals
+    const travelRoundTrip = travelOneWay * 2;
+    const totalMinutes = travelRoundTrip + flightBlock;
+
+    // Render
+    el("travelOut").textContent = `${fmt(travelOneWay)} one-way`;
+    el("travelMeta").textContent = `${office} · round trip ${fmt(travelRoundTrip)}`;
+
+    el("flightOut").textContent = fmt(flightMinutes);
+    el("flightMeta").textContent = `${acres.toFixed(1)} acres at 0.20 acres/min`;
+
+    el("battOut").textContent = `${batteries}`;
+    el("battMeta").textContent = swaps
+      ? `${swaps} swap(s) ⇒ +${swapMinutes} min overhead`
+      : "No swaps needed";
+
+    el("bucketOut").textContent = bucket;
+    el("bucketMeta").textContent = `Half-day ≤ ${HALF_DAY_MAX_ACRES} acres`;
+
+    el("totalOut").textContent = fmt(totalMinutes);
+    el("totalMeta").textContent =
+      `Drive ${fmt(travelRoundTrip)} + flight block ${fmt(flightBlock)}`;
+
+    el("status").textContent = "Estimate updated.";
+  });
+</script>
+</body>
+</html>
