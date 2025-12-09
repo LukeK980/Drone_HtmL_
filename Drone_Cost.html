@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Travel + Flight Estimator (MVP)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#141a2e;
+      --muted:#9aa4c7;
+      --text:#e9edff;
+      --accent:#7dd3fc;
+      --accent2:#a78bfa;
+      --good:#34d399;
+      --warn:#fbbf24;
+      --bad:#fb7185;
+      --line:rgba(255,255,255,.08);
+      font-synthesis: style;
+    }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% -10%, #18224a, transparent),
+                  radial-gradient(900px 500px at 110% 10%, #1b2b66, transparent),
+                  var(--bg);
+      color:var(--text);
+      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      padding:24px;
+    }
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap:16px;
+    }
+    @media (max-width: 900px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)),
+                  var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35);
+      padding:18px;
+    }
+    h1{
+      font-weight:700;
+      margin:0 0 10px 0;
+      letter-spacing:.2px;
+      font-size:20px;
+    }
+    h2{
+      font-size:14px;
+      color:var(--muted);
+      font-weight:600;
+      margin:0 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing:.08em;
+    }
+
+    label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin:8px 0 6px;
+    }
+    input, select, textarea{
+      width:100%;
+      box-sizing:border-box;
+      background:#0e1430;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px 12px;
+      outline:none;
+      transition:.15s border, .15s box-shadow;
+      font-size:14px;
+    }
+    textarea{ min-height:64px; resize:vertical; }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(125,211,252,.7);
+      box-shadow: 0 0 0 3px rgba(125,211,252,.12);
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .btns{
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+    button{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(125,211,252,.18), rgba(167,139,250,.12));
+      color:var(--text);
+      font-weight:700;
+      padding:10px 12px;
+      border-radius:10px;
+      letter-spacing:.2px;
+      transition:.15s transform, .15s opacity;
+    }
+    button.secondary{
+      background:#0e1430;
+      font-weight:600;
+      color:var(--muted);
+    }
+    button:hover{ transform: translateY(-1px); }
+    button:active{ transform: translateY(0); opacity:.9; }
+
+    .kpi{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:8px;
+    }
+    .kpi .box{
+      background:#0e1430;
+      border:1px dashed var(--line);
+      border-radius:12px;
+      padding:12px;
+      min-height:64px;
+    }
+    .kpi .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .kpi .value{
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:.3px;
+    }
+    .pill{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.3px;
+      vertical-align:middle;
+    }
+    .pill.good{ background:rgba(52,211,153,.12); color:var(--good); border:1px solid rgba(52,211,153,.3); }
+    .pill.warn{ background:rgba(251,191,36,.12); color:var(--warn); border:1px solid rgba(251,191,36,.3); }
+    .pill.bad{ background:rgba(251,113,133,.12); color:var(--bad); border:1px solid rgba(251,113,133,.3); }
+
+    .small{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:8px;
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      margin-top:8px;
+      font-size:14px;
+    }
+    td{
+      padding:8px 6px;
+      border-bottom:1px solid var(--line);
+      vertical-align:top;
+    }
+    td:first-child{
+      color:var(--muted);
+      width:52%;
+    }
+    .footer{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      opacity:.9;
+    }
+    .edit{
+      font-size:12px;
+      color:var(--accent);
+      cursor:pointer;
+      user-select:none;
+      float:right;
+    }
+    .office-editor{
+      display:none;
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid var(--line);
+    }
+    .office-editor textarea{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- INPUTS -->
+    <section class="card">
+      <h1>Travel + Drone Flight Estimator</h1>
+      <p class="small">
+        Ballpark tool for PM estimates. Uses effective coverage of <b>9 acres/hour</b> including battery changes.
+      </p>
+
+      <h2>Inputs</h2>
+
+      <label for="office">Pilot Office</label>
+      <select id="office"></select>
+      <span id="toggleOfficeEditor" class="edit">Edit office list</span>
+
+      <div id="officeEditor" class="office-editor">
+        <label for="officesJson">Offices JSON (name + address). Save to update dropdown.</label>
+        <textarea id="officesJson"></textarea>
+        <div class="btns">
+          <button id="saveOffices" class="secondary">Save Offices</button>
+          <button id="resetOffices" class="secondary">Reset to Default</button>
+        </div>
+        <div class="small">Tip: keep JSON valid. Example shown in the box.</div>
+      </div>
+
+      <label for="siteAddress">Site Address</label>
+      <textarea id="siteAddress" placeholder="123 Main St, City, ST"></textarea>
+
+      <div class="row">
+        <div>
+          <label for="oneWayTravelHrs">Travel Time (one-way, hours)</label>
+          <input id="oneWayTravelHrs" type="number" min="0" step="0.1" placeholder="e.g., 2.5">
+        </div>
+        <div>
+          <label for="siteAcres">Site Size (acres)</label>
+          <input id="siteAcres" type="number" min="0" step="0.1" placeholder="e.g., 18">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="hourlyRate">Pilot Hourly Rate (optional, $/hr)</label>
+          <input id="hourlyRate" type="number" min="0" step="1" placeholder="leave blank for time only">
+        </div>
+        <div>
+          <label for="travelBillingFactor">Travel Billing Factor (optional)</label>
+          <input id="travelBillingFactor" type="number" min="0" step="0.1" value="1.0">
+          <div class="small">1.0 = billed same as field time, 0.5 = half rate, etc.</div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="calcBtn">Calculate</button>
+        <button id="clearBtn" class="secondary">Clear</button>
+      </div>
+
+      <div class="small">
+        Notes: If you don’t know travel time yet, estimate via Google/Mapbox and paste here.
+      </div>
+    </section>
+
+    <!-- OUTPUTS -->
+    <section class="card">
+      <h2>Results</h2>
+
+      <div class="kpi">
+        <div class="box">
+          <div class="label">Site bucket</div>
+          <div id="bucket" class="value">—</div>
+        </div>
+        <div class="box">
+          <div class="label">Total pilot time away</div>
+          <div id="totalTime" class="value">—</div>
+        </div>
+        <div class="box">
+          <div class="label">On-site effective flight hours</div>
+          <div id="flightHours" class="value">—</div>
+        </div>
+        <div class="box">
+          <div class="label">Batteries needed</div>
+          <div id="batteries" class="value">—</div>
+        </div>
+      </div>
+
+      <table>
+        <tbody>
+          <tr><td>Selected office</td><td id="officeOut">—</td></tr>
+          <tr><td>Office address</td><td id="officeAddrOut">—</td></tr>
+          <tr><td>Site address</td><td id="siteOut">—</td></tr>
+          <tr><td>Travel time (one-way)</td><td id="oneWayOut">—</td></tr>
+          <tr><td>Travel time (round-trip)</td><td id="roundTripOut">—</td></tr>
+          <tr><td>Effective coverage rate</td><td>9 acres/hour (includes 30-min battery + 10-min swap)</td></tr>
+          <tr><td>Pure flight time rate</td><td>12 acres/hour (0.20 acre/min at 100' AGL)</td></tr>
+          <tr><td>Estimated cost (if rate provided)</td><td id="costOut">—</td></tr>
+        </tbody>
+      </table>
+
+      <div class="small">
+        Buckets assume ~4 effective flight hours for half-day and ~8 for full-day.
+      </div>
+    </section>
+  </div>
+
+  <div class="footer">
+    Terraphase Phase 1 estimator • MVP v0.1
+  </div>
+
+<script>
+(function(){
+  // ===== Default office list (edit here or via UI) =====
+  const DEFAULT_OFFICES = [
+    { name: "Denver, CO", address: "1600 Broadway, Denver, CO 80202" },
+    { name: "Phoenix, AZ", address: "1 N Central Ave, Phoenix, AZ 85004" },
+    { name: "Houston, TX", address: "800 Bagby St, Houston, TX 77002" },
+    { name: "Boston, MA", address: "31 St James Ave, Boston, MA 02116" }
+  ];
+
+  // Load persisted offices (if user edited)
+  function loadOffices(){
+    try{
+      const raw = localStorage.getItem("tp_offices_v1");
+      if(!raw) return DEFAULT_OFFICES;
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length) return parsed;
+      return DEFAULT_OFFICES;
+    }catch(e){
+      return DEFAULT_OFFICES;
+    }
+  }
+
+  function saveOffices(offices){
+    localStorage.setItem("tp_offices_v1", JSON.stringify(offices));
+  }
+
+  let offices = loadOffices();
+
+  const officeSelect = document.getElementById("office");
+  const officesJsonBox = document.getElementById("officesJson");
+  const officeEditor = document.getElementById("officeEditor");
+  const toggleOfficeEditor = document.getElementById("toggleOfficeEditor");
+
+  function populateOffices(){
+    officeSelect.innerHTML = "";
+    offices.forEach((o, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.textContent = o.name;
+      officeSelect.appendChild(opt);
+    });
+  }
+  populateOffices();
+  officesJsonBox.value = JSON.stringify(offices, null, 2);
+
+  toggleOfficeEditor.onclick = () => {
+    const open = officeEditor.style.display === "block";
+    officeEditor.style.display = open ? "none" : "block";
+    toggleOfficeEditor.textContent = open ? "Edit office list" : "Hide office list";
+  };
+
+  document.getElementById("saveOffices").onclick = () => {
+    try{
+      const updated = JSON.parse(officesJsonBox.value);
+      if(!Array.isArray(updated) || !updated.length) throw new Error("Office list must be a non-empty array");
+      updated.forEach(o=>{
+        if(!o.name || !o.address) throw new Error("Each office needs name and address");
+      });
+      offices = updated;
+      saveOffices(offices);
+      populateOffices();
+      alert("Offices updated!");
+    }catch(e){
+      alert("Couldn’t save offices: " + e.message);
+    }
+  };
+
+  document.getElementById("resetOffices").onclick = () => {
+    offices = DEFAULT_OFFICES;
+    saveOffices(offices);
+    officesJsonBox.value = JSON.stringify(offices, null, 2);
+    populateOffices();
+  };
+
+  // ===== Math constants from your assumptions =====
+  const PURE_RATE_ACRE_PER_MIN = 0.20; // acres/min
+  const PURE_RATE_ACRE_PER_HR  = 12;   // acres/hr
+  const BATTERY_FLIGHT_MIN = 30;
+  const BATTERY_SWAP_MIN   = 10;
+
+  // derived
+  const ACRES_PER_BATT = PURE_RATE_ACRE_PER_MIN * BATTERY_FLIGHT_MIN; // 6
+  const EFFECTIVE_RATE_ACRE_PER_MIN =
+    ACRES_PER_BATT / (BATTERY_FLIGHT_MIN + BATTERY_SWAP_MIN); // 0.15
+  const EFFECTIVE_RATE_ACRE_PER_HR = EFFECTIVE_RATE_ACRE_PER_MIN * 60; // 9
+
+  const HALF_DAY_HRS = 4;  // effective flight hours
+  const FULL_DAY_HRS = 8;  // effective flight hours
+  const HALF_DAY_CAP_ACRES = HALF_DAY_HRS * EFFECTIVE_RATE_ACRE_PER_HR; // 36
+  const FULL_DAY_CAP_ACRES = FULL_DAY_HRS * EFFECTIVE_RATE_ACRE_PER_HR; // 72
+
+  const fmtHrs = (h) => {
+    if(!isFinite(h)) return "—";
+    const r = Math.round(h * 10) / 10;
+    return r + " hr" + (r === 1 ? "" : "s");
+  };
+
+  const fmtDollars = (n) => {
+    if(!isFinite(n)) return "—";
+    return "$" + n.toLocaleString(undefined, {maximumFractionDigits:0});
+  };
+
+  function calc(){
+    const officeIdx = +officeSelect.value;
+    const office = offices[officeIdx];
+
+    const siteAddress = document.getElementById("siteAddress").value.trim();
+    const oneWayTravel = parseFloat(document.getElementById("oneWayTravelHrs").value);
+    const acres = parseFloat(document.getElementById("siteAcres").value);
+    const hourlyRate = parseFloat(document.getElementById("hourlyRate").value);
+    const travelFactor = parseFloat(document.getElementById("travelBillingFactor").value || "1");
+
+    if(!office) return alert("Pick an office.");
+    if(!isFinite(acres) || acres <= 0) return alert("Enter a valid site size (acres).");
+    if(!isFinite(oneWayTravel) || oneWayTravel < 0) return alert("Enter a valid one-way travel time (hours).");
+
+    const flightHours = acres / EFFECTIVE_RATE_ACRE_PER_HR;
+    const batteriesNeeded = Math.ceil(acres / ACRES_PER_BATT);
+    const roundTrip = oneWayTravel * 2;
+    const totalTime = roundTrip + flightHours;
+
+    let bucketLabel = "";
+    let pillClass = "good";
+    if(acres <= HALF_DAY_CAP_ACRES){
+      bucketLabel = `Half-day (< ${HALF_DAY_CAP_ACRES} acres)`;
+      pillClass = "good";
+    }else if(acres <= FULL_DAY_CAP_ACRES){
+      bucketLabel = `Full-day (${HALF_DAY_CAP_ACRES}–${FULL_DAY_CAP_ACRES} acres)`;
+      pillClass = "warn";
+    }else{
+      bucketLabel = `Multi-day (> ${FULL_DAY_CAP_ACRES} acres)`;
+      pillClass = "bad";
+    }
+
+    // Cost optional
+    let costText = "—";
+    if(isFinite(hourlyRate) && hourlyRate > 0){
+      const billableHours = (roundTrip * travelFactor) + flightHours;
+      const cost = billableHours * hourlyRate;
+      costText = `${fmtDollars(cost)}  (${fmtHrs(billableHours)} billable)`;
+    }
+
+    // Output
+    document.getElementById("bucket").innerHTML =
+      `<span class="pill ${pillClass}">${bucketLabel}</span>`;
+    document.getElementById("flightHours").textContent = fmtHrs(flightHours);
+    document.getElementById("batteries").textContent = batteriesNeeded;
+    document.getElementById("totalTime").textContent = fmtHrs(totalTime);
+
+    document.getElementById("officeOut").textContent = office.name;
+    document.getElementById("officeAddrOut").textContent = office.address;
+    document.getElementById("siteOut").textContent = siteAddress || "—";
+    document.getElementById("oneWayOut").textContent = fmtHrs(oneWayTravel);
+    document.getElementById("roundTripOut").textContent = fmtHrs(roundTrip);
+    document.getElementById("costOut").textContent = costText;
+  }
+
+  function clearAll(){
+    document.getElementById("siteAddress").value = "";
+    document.getElementById("oneWayTravelHrs").value = "";
+    document.getElementById("siteAcres").value = "";
+    document.getElementById("hourlyRate").value = "";
+    document.getElementById("travelBillingFactor").value = "1.0";
+
+    ["bucket","totalTime","flightHours","batteries",
+     "officeOut","officeAddrOut","siteOut",
+     "oneWayOut","roundTripOut","costOut"
+    ].forEach(id => document.getElementById(id).textContent = "—");
+  }
+
+  document.getElementById("calcBtn").onclick = calc;
+  document.getElementById("clearBtn").onclick = clearAll;
+})();
+</script>
+</body>
+</html>
